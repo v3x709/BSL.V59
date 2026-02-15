@@ -52,10 +52,24 @@ class Messaging:
             if msg_type == 10101:
                 decrypted_payload = self.handle_pepper_login(payload)
                 if decrypted_payload:
-                    player_data = self.db_manager.get_player(0, 1)
+                    from logic.protocol.laser.c.login_message import LoginMessage
+                    login_msg = LoginMessage(decrypted_payload)
+                    login_msg.decode()
+
+                    id_high = login_msg.account_id_high
+                    id_low = login_msg.account_id_low
+                    token = login_msg.token
+
+                    if id_low == 0: # New account
+                        id_low = self.db_manager.get_max_id_low() + 1
+                        import secrets
+                        token = secrets.token_hex(16)
+                        self.db_manager.create_player(0, id_low, token)
+
+                    player_data = self.db_manager.get_player(0, id_low)
                     if not player_data:
-                        self.db_manager.create_player(0, 1, "token")
-                        player_data = self.db_manager.get_player(0, 1)
+                        self.db_manager.create_player(0, id_low, token)
+                        player_data = self.db_manager.get_player(0, id_low)
 
                     from logic.player import Player
                     self.player = Player(player_data)
@@ -103,7 +117,7 @@ class Messaging:
         try:
             self.client_pk = payload[0:32]
 
-            hasher = hashlib.blake2b(digest_size=32)
+            hasher = hashlib.blake2b(digest_size=24)
             hasher.update(self.client_pk)
             hasher.update(PepperKey.SERVER_PUBLIC_KEY)
             nonce = hasher.digest()
@@ -143,7 +157,7 @@ class Messaging:
         packet.extend(self.secret_key)
         packet.extend(payload)
 
-        hasher = hashlib.blake2b(digest_size=32)
+        hasher = hashlib.blake2b(digest_size=24)
         hasher.update(self.r_nonce)
         hasher.update(self.client_pk)
         hasher.update(PepperKey.SERVER_PUBLIC_KEY)

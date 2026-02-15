@@ -5,30 +5,30 @@ class LoginOkMessage(PiranhaMessage):
         super().__init__()
 
     def encode(self):
-        # Account ID (High, Low)
+        # Account ID
         self.stream.write_int(0)
         self.stream.write_int(1)
 
-        # Home ID (High, Low)
+        # Home ID
         self.stream.write_int(0)
         self.stream.write_int(1)
 
         self.stream.write_string("abcdefghijklmnopqrstuvwxyz") # Token
         self.stream.write_string("") # Facebook ID
         self.stream.write_string("") # Gamecenter ID
-        self.stream.write_int(59) # Major Version
-        self.stream.write_int(197) # Build Version
-        self.stream.write_int(1) # Content Version
-        self.stream.write_string("dev") # Environment
-        self.stream.write_int(0) # Session Count
-        self.stream.write_int(0) # Play Time Seconds
-        self.stream.write_int(0) # Days Since Started
-        self.stream.write_string("") # Facebook App ID
-        self.stream.write_string("") # Supercell ID
-        self.stream.write_string("") # Google ID
+        self.stream.write_int(59)
+        self.stream.write_int(197)
+        self.stream.write_int(1)
+        self.stream.write_string("dev")
+        self.stream.write_int(0)
+        self.stream.write_int(0)
         self.stream.write_int(0)
         self.stream.write_string("")
-        self.stream.write_string("RU") # Region
+        self.stream.write_string("")
+        self.stream.write_string("")
+        self.stream.write_int(0)
+        self.stream.write_string("")
+        self.stream.write_string("RU")
         self.stream.write_string("")
         self.stream.write_int(0)
         self.stream.write_string("")
@@ -42,16 +42,8 @@ class LoginOkMessage(PiranhaMessage):
         self.stream.write_string("")
         self.stream.write_boolean(True)
         self.stream.write_boolean(False)
-        self.stream.write_string("")
-        self.stream.write_string("")
-        self.stream.write_string("")
-        self.stream.write_string("")
-        self.stream.write_string("")
-        self.stream.write_boolean(False)
-        self.stream.write_boolean(False)
-        self.stream.write_boolean(False)
-        self.stream.write_boolean(False)
-        self.stream.write_boolean(False)
+        for _ in range(5): self.stream.write_string("")
+        for _ in range(5): self.stream.write_boolean(False)
 
     def get_message_type(self):
         return 20104
