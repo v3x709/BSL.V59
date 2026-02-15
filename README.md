@@ -10,10 +10,30 @@ A rebuild of the BSL.v59 server in Python, optimized for Termux.
 - Simulated battle system
 - Termux compatible (non-root)
 
-## Installation
-1. Install Python in Termux: `pkg install python`
-2. Clone/Copy the `v59_python` directory.
-3. Run `./start.sh`
+## Installation in Termux
+
+We use `pysodium` to avoid compilation issues in Termux. It requires the system `libsodium` package.
+
+1. **Update and install build essentials:**
+   ```bash
+   pkg update
+   pkg install python libsodium
+   ```
+
+2. **Install Python dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Run the server:**
+   ```bash
+   chmod +x start.sh
+   ./start.sh
+   ```
+
+## Customization
+- **Database**: The server uses `server.db`. You can inspect it using any SQLite viewer.
+- **Rewards**: Trophy and Ranked point gains can be adjusted in `logic/player.py`.
 
 ## Credits
 Original C# server by LkPrtctrd.

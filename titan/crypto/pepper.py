@@ -1,15 +1,11 @@
-import nacl.utils
-from nacl.public import PrivateKey, PublicKey, Box
-from nacl.secret import SecretBox
+import pysodium
 import hashlib
 
 class PepperKey:
     # ServerSecretKey = Convert.FromHexString("48d7d188d2c4b263233e1f0816bf231e8a3756e280a80083b47d8104e9d002da");
     SERVER_SECRET_KEY = bytes.fromhex("48d7d188d2c4b263233e1f0816bf231e8a3756e280a80083b47d8104e9d002da")
-    # In TweetNaCl, CryptoScalarmultBase(ServerSecretKey) gives the public key.
-    # In PyNaCl, PrivateKey(seed).public_key gives the public key.
-    _private_key = PrivateKey(SERVER_SECRET_KEY)
-    SERVER_PUBLIC_KEY = bytes(_private_key.public_key)
+    # In TweetNaCl/libsodium, crypto_scalarmult_base gives the public key from secret key.
+    SERVER_PUBLIC_KEY = pysodium.crypto_scalarmult_base(SERVER_SECRET_KEY)
 
 class PepperEncrypter:
     def __init__(self, key, nonce):
@@ -21,22 +17,16 @@ class PepperEncrypter:
             return b''
         self.next_nonce()
         # Pepper uses secretbox which is XSalsa20-Poly1305
-        box = SecretBox(self.key)
-        # nacl.secret.SecretBox.encrypt(plaintext, nonce)
-        # Note: SecretBox.encrypt returns (nonce + ciphertext).
-        # But we provide the nonce and we want ONLY the ciphertext (with MAC).
-        # In TweetNaCl, it's [MAC(16 bytes)][Ciphertext]
-        encrypted = box.encrypt(data, bytes(self.nonce))
-        return encrypted.ciphertext
+        # pysodium.crypto_secretbox(message, nonce, key)
+        # Returns the ciphertext with the MAC prepended (16 bytes).
+        return pysodium.crypto_secretbox(data, bytes(self.nonce), self.key)
 
     def decrypt(self, data):
         if not data:
             return b''
         self.next_nonce()
-        box = SecretBox(self.key)
-        # nacl.secret.SecretBox.decrypt(ciphertext, nonce)
-        # data here should include the 16-byte MAC.
-        return box.decrypt(data, bytes(self.nonce))
+        # pysodium.crypto_secretbox_open(ciphertext, nonce, key)
+        return pysodium.crypto_secretbox_open(data, bytes(self.nonce), self.key)
 
     def next_nonce(self):
         v8 = 2
