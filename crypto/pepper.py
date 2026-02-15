@@ -1,4 +1,5 @@
 import pysodium
+import hashlib
 
 class PepperKey:
     SERVER_SECRET_KEY = bytes.fromhex("48d7d188d2c4b263233e1f0816bf231e8a3756e280a80083b47d8104e9d002da")
@@ -11,7 +12,8 @@ class PepperEncrypter:
 
     def encrypt(self, data):
         self.next_nonce()
-        # libsodium easy version prepends 16-byte MAC.
+        # Pepper uses XSalsa20-Poly1305 (SecretBox)
+        # libsodium easy API prepends 16-byte MAC.
         return pysodium.crypto_secretbox(data, bytes(self.nonce), self.key)
 
     def decrypt(self, data):
@@ -25,3 +27,6 @@ class PepperEncrypter:
             self.nonce[i] = v10 & 0xFF
             v8 = v10 >> 8
             if v8 == 0: break
+
+    def get_encryption_overhead(self):
+        return 16

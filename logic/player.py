@@ -1,5 +1,4 @@
 import random
-import json
 
 class Player:
     def __init__(self, data):
@@ -14,20 +13,19 @@ class Player:
         self.gold = data['gold']
         self.star_points = data['star_points']
         self.ranked_points = data['ranked_points']
-        self.brawlers = data['brawlers'] # Dict of brawler_id -> stats
+        self.ranked_level = data['ranked_level']
+        self.brawlers = data['brawlers']
+        self.friends = data.get('friends', [])
+        self.mail = data.get('mail', [])
 
-    def add_battle_reward(self, win=True):
-        if win:
-            trophy_gain = random.randint(80, 350)
-            ranked_gain = random.randint(200, 900)
-            self.trophies += trophy_gain
-            self.ranked_points += ranked_gain
-            if self.trophies > self.highest_trophies:
-                self.highest_trophies = self.trophies
-            return trophy_gain, ranked_gain
-        else:
-            # Losing might still give some points in this "modded" server or just 0
-            return 0, 0
+    def process_win(self):
+        rgain = random.randint(200, 900)
+        tgain = random.randint(80, 350)
+        self.ranked_points += rgain
+        self.trophies += tgain
+        if self.trophies > self.highest_trophies:
+            self.highest_trophies = self.trophies
+        return rgain, tgain
 
     def to_dict(self):
         return {
@@ -41,5 +39,8 @@ class Player:
             'gold': self.gold,
             'star_points': self.star_points,
             'ranked_points': self.ranked_points,
-            'brawlers': self.brawlers
+            'ranked_level': self.ranked_level,
+            'brawlers': self.brawlers,
+            'friends': self.friends,
+            'mail': self.mail
         }

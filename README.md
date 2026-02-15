@@ -1,40 +1,20 @@
-# BSL.v59 Python Server
-A rebuild of the BSL.v59 server in Python, optimized for Termux.
+# BSL.v59 Modern Python Server
+A complex and modern rebuild of the BSL.v59 private server in Python for Termux.
 
 ## Features
-- Full Python rebuild from C#
-- SQLite database for persistence
-- Custom Trophy (80-350) and Ranked Point (200-900+) rewards
-- Shelly starter brawler
-- Shop welcome reward
-- Simulated battle system
-- Termux compatible (non-root)
+- Full accurately ported protocol (Lobby + Login)
+- Real-time UDP Battle Server skeleton with simulation loop
+- SQLite Database for full persistence
+- Complex Ranked System: Random 200-900+ points per win
+- Modded Rewards: High trophy gains (80-350) and Shop Welcome Reward (99k gems)
+- Termux Optimized: Uses `pysodium` to avoid build errors.
 
-## Installation in Termux
-
-We use `pysodium` to avoid compilation issues in Termux. It requires the system `libsodium` package.
-
-1. **Update and install build essentials:**
-   ```bash
-   pkg update
-   pkg install python libsodium
-   ```
-
-2. **Install Python dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Run the server:**
-   ```bash
-   chmod +x start.sh
-   ./start.sh
-   ```
-
-## Customization
-- **Database**: The server uses `server.db`. You can inspect it using any SQLite viewer.
-- **Rewards**: Trophy and Ranked point gains can be adjusted in `logic/player.py`.
+## Installation
+1. `pkg update && pkg install python libsodium`
+2. `pip install pysodium`
+3. `chmod +x start.sh`
+4. `./start.sh`
 
 ## Credits
-Original C# server by LkPrtctrd.
-Python rebuild by Jules.
+LkPrtctrd for the original C# server.
+Jules for the Modern Python rebuild.
