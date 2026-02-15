@@ -64,25 +64,16 @@ class ByteStream(ChecksumEncoder):
         self.buffer = bytearray(buffer) if buffer else bytearray()
         self.offset = 0
         self.bit_idx = 0
-        self.length = len(self.buffer)
 
     def read_boolean(self):
-        if self.bit_idx == 0:
-            self.offset += 1
+        if self.bit_idx == 0: self.offset += 1
         value = (self.buffer[self.offset - 1] & (1 << self.bit_idx)) != 0
         self.bit_idx = (self.bit_idx + 1) & 7
         return value
 
     def read_byte(self):
         self.bit_idx = 0
-        val = self.buffer[self.offset]
-        self.offset += 1
-        return val
-
-    def read_short(self):
-        self.bit_idx = 0
-        val = struct.unpack_from('>h', self.buffer, self.offset)[0]
-        self.offset += 2
+        val = self.buffer[self.offset]; self.offset += 1
         return val
 
     def read_int(self):
@@ -94,9 +85,7 @@ class ByteStream(ChecksumEncoder):
     def read_vint(self):
         self.bit_idx = 0
         value = 0
-        byte = self.buffer[self.offset]
-        self.offset += 1
-
+        byte = self.buffer[self.offset]; self.offset += 1
         if (byte & 0x40) != 0:
             value |= byte & 0x3F
             if (byte & 0x80) == 0: return value | -64
@@ -112,7 +101,6 @@ class ByteStream(ChecksumEncoder):
             byte = self.buffer[self.offset]; self.offset += 1
             value |= (byte & 0x7F) << 27
             return value | -2147483648
-
         value |= byte & 0x3F
         if (byte & 0x80) == 0: return value
         byte = self.buffer[self.offset]; self.offset += 1
@@ -200,6 +188,10 @@ class ByteStream(ChecksumEncoder):
                 self.buffer[self.offset:self.offset+5] = [(value & 0x3F) | 0x80, ((value >> 6) & 0x7F) | 0x80, ((value >> 13) & 0x7F) | 0x80, ((value >> 20) & 0x7F) | 0x80, (value >> 27) & 0xF]; self.offset += 5
         return value
 
+    def write_vlong(self, high, low):
+        self.write_vint(high)
+        self.write_vint(low)
+
     def write_bytes(self, value, length=-1):
         if length == -1: length = len(value) if value else 0
         super().write_bytes(value, length)
@@ -238,12 +230,13 @@ class LogicLong:
         self.high = high
         self.low = low
 
-    def decode(self, stream):
-        self.high = stream.read_int()
-        self.low = stream.read_int()
-        return self
-
     def encode(self, stream):
+        # Default encode uses WriteInt for LoginOk compatibility
         stream.write_int(self.high)
         stream.write_int(self.low)
+        return self
+
+    def encode_vint(self, stream):
+        stream.write_vint(self.high)
+        stream.write_vint(self.low)
         return self
