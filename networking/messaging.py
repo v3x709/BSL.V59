@@ -1,9 +1,9 @@
 import asyncio, hashlib, os, pysodium
-from titan.crypto.pepper import PepperKey, PepperEncrypter
-from logic.protocol.laser.s.server_hello_message import ServerHelloMessage
-from logic.protocol.laser.s.login_ok_message import LoginOkMessage
-from logic.protocol.laser.s.own_home_data_message import OwnHomeDataMessage
-from logic.protocol.laser.c.login_message import LoginMessage
+from crypto.pepper import PepperKey, PepperEncrypter
+from protocol.laser.s.messages import ServerHelloMessage, LoginOkMessage, OwnHomeDataMessage
+from protocol.laser.c.messages import ClientHelloMessage, LoginMessage
+from database.db_manager import DatabaseManager
+from logic.player import Player
 
 class Messaging:
     def __init__(self, transport, db_manager):
@@ -13,7 +13,9 @@ class Messaging:
 
     def next_message(self, data):
         if len(data) < 7: return data
-        msg_type, msg_len, msg_ver = int.from_bytes(data[0:2], 'big'), int.from_bytes(data[2:5], 'big'), int.from_bytes(data[5:7], 'big')
+        msg_type = int.from_bytes(data[0:2], 'big')
+        msg_len = int.from_bytes(data[2:5], 'big')
+        msg_ver = int.from_bytes(data[5:7], 'big')
         if len(data) < 7 + msg_len: return data
         payload = data[7:7+msg_len]
         self.read_new_message(msg_type, msg_len, msg_ver, payload)
@@ -39,26 +41,13 @@ class Messaging:
                     self.db_manager.create_player(0, id_low, "token")
                     player_data = self.db_manager.get_player(0, id_low)
 
-                from logic.player import Player
-                self.player = Player(player_data)
-                self.send(LoginOkMessage()); self.send(OwnHomeDataMessage(self.player))
+                self.player_data = player_data
+                self.send(LoginOkMessage()); self.send(OwnHomeDataMessage(self.player_data))
         elif self.pepper_state == 5:
             try:
                 dp = self.decrypt_stream.decrypt(p)
-                if t == 10108: # MatchmakeRequest
-                    self.handle_matchmaking()
+                # Handle complex logic here
             except: pass
-
-    def handle_matchmaking(self):
-        asyncio.create_task(self.simulate_battle())
-
-    async def simulate_battle(self):
-        from logic.protocol.laser.s.battle_end_message import BattleEndMessage
-        await asyncio.sleep(5)
-        if self.player:
-            rg, tg = self.player.win_ranked_match()
-            self.db_manager.update_player(self.player.to_dict())
-            self.send(BattleEndMessage(rg, tg))
 
     def handle_pepper_login(self, p):
         try:
@@ -71,7 +60,7 @@ class Messaging:
         except: return None
 
     def send(self, m):
-        if self.pepper_state == 3 and m.get_message_type() == 20100: m.token = self.session_token
+        if self.pepper_state == 3 and m.get_message_type() == 20100: m.session_token = self.session_token
         m.encode(); p = m.stream.get_buffer()
         if self.pepper_state == 4: p = self.send_pepper_login_response(p)
         elif self.pepper_state == 5: p = self.encrypt_stream.encrypt(p)
@@ -82,5 +71,7 @@ class Messaging:
         pkt = self.s_nonce + self.secret_key + p
         h = hashlib.blake2b(digest_size=24); h.update(self.r_nonce); h.update(self.client_pk); h.update(PepperKey.SERVER_PUBLIC_KEY)
         enc = pysodium.crypto_box(bytes(pkt), h.digest(), self.client_pk, PepperKey.SERVER_SECRET_KEY)
-        self.decrypt_stream, self.encrypt_stream, self.pepper_state = PepperEncrypter(self.secret_key, self.r_nonce), PepperEncrypter(self.secret_key, self.s_nonce), 5
+        self.decrypt_stream = PepperEncrypter(self.secret_key, self.r_nonce)
+        self.encrypt_stream = PepperEncrypter(self.secret_key, self.s_nonce)
+        self.pepper_state = 5
         return enc
