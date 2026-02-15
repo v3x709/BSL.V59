@@ -12,22 +12,22 @@ A rebuild of the BSL.v59 server in Python, optimized for Termux.
 
 ## Installation in Termux
 
-If you encounter errors while installing `pynacl`, follow these steps to use the system's `libsodium`:
+We use `pysodium` to avoid compilation issues in Termux. It requires the system `libsodium` package.
 
 1. **Update and install build essentials:**
    ```bash
    pkg update
-   pkg install python clang make libffi libsodium libsodium-dev
+   pkg install python libsodium
    ```
 
 2. **Install Python dependencies:**
    ```bash
-   export SODIUM_INSTALL=system
    pip install -r requirements.txt
    ```
 
 3. **Run the server:**
    ```bash
+   chmod +x start.sh
    ./start.sh
    ```
 
